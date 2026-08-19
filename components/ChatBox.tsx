@@ -120,12 +120,12 @@ export function ChatBox({ subjectId }: ChatBoxProps) {
           content: reply
         }]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'system',
-        content: 'Error generating response. Please try again.'
+        content: `Error generating response: ${error.message || String(error)}. Please try again.`
       }]);
     } finally {
       setIsGenerating(false);

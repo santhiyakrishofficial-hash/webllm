@@ -1,35 +1,32 @@
-import * as webllm from '@mlc-ai/web-llm';
+import { CreateMLCEngine, MLCEngineInterface, InitProgressReport, ChatCompletionMessageParam } from '@mlc-ai/web-llm';
 
-let engine: webllm.MLCEngineInterface | null = null;
+let engine: MLCEngineInterface | null = null;
 
 // Use a small model supported by WebLLM suitable for browser
 const MODEL_ID = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'; 
 
 export async function initWebLLM(
-  onProgress?: (progress: webllm.InitProgressReport) => void
+  onProgress?: (progress: InitProgressReport) => void
 ) {
   if (engine) return engine;
 
-  engine = new webllm.MLCEngine();
-  
-  if (onProgress) {
-    engine.setInitProgressCallback(onProgress);
-  }
-
-  await engine.reload(MODEL_ID);
+  engine = await CreateMLCEngine(
+    MODEL_ID,
+    { initProgressCallback: onProgress }
+  );
   
   return engine;
 }
 
 export async function generateTutorResponse(
-  messages: webllm.ChatCompletionMessageParam[],
+  messages: ChatCompletionMessageParam[],
   systemPrompt: string
 ) {
   if (!engine) {
     throw new Error('WebLLM engine not initialized. Call initWebLLM first.');
   }
 
-  const allMessages: webllm.ChatCompletionMessageParam[] = [
+  const allMessages: ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     ...messages
   ];
