@@ -1,24 +1,83 @@
 Model Information for KidsZone AI Tutor
 =======================================
 
+Two models are used — one for pure text chat, one for vision/image tasks.
+Both run entirely offline in the browser via WebGPU after the first download.
+
+═══════════════════════════════════════════
+  TEXT MODEL  (WebLLM · Qwen3)
+═══════════════════════════════════════════
+
 Model Name:
-Llama-3.2-1B-Instruct-q4f16_1-MLC
+  Qwen3-1.7B-q4f16_1-MLC
+
+Engine:
+  WebLLM (@mlc-ai/web-llm) + WebGPU
 
 Base Architecture:
-Meta Llama 3.2 (1 Billion Parameters) - Instruct Tuned
+  Qwen 3 — 1.7 Billion Parameters, Instruct Tuned
 
 Quantization:
-q4f16_1 (4-bit quantization for weights, 16-bit floats for activations)
-This quantization significantly reduces the model's footprint, allowing it to run smoothly in standard web browsers with WebGPU without crashing the user's device.
+  q4f16_1 (4-bit weights, 16-bit activations)
 
-Estimated Download Size:
-~800 MB - 1 GB (Cached in the browser after the first download)
+Download Size:
+  ~800 MB (cached in browser Cache API)
 
-Hardware Requirements:
-- A browser with WebGPU support (Chrome 113+, Edge 113+, or Safari with feature flags enabled).
-- VRAM / System Memory: Runs comfortably on devices with at least 4GB of RAM (the model itself uses around 1GB - 1.5GB of RAM/VRAM during inference).
+VRAM at Runtime:
+  ~2 GB
 
-Why this model?
-1. Small Footprint: The 1B parameter size is perfect for offline browser execution.
-2. Instruct Tuned: It is great at following formatting and behavior rules via system prompts, which is perfect for creating our customized KidsZone tutor personas.
-3. Offline Capability: Once downloaded to the browser's IndexedDB, no internet connection is required to chat.
+Why Qwen3-1.7B?
+  • Latest Qwen generation — better reasoning than Qwen2.5
+  • Smallest practical Qwen3 model for coherent multi-turn dialogue
+  • Very low VRAM — runs on most consumer GPUs and integrated graphics
+
+═══════════════════════════════════════════
+  VISION MODEL  (Transformers.js · SmolVLM)
+═══════════════════════════════════════════
+
+Model Name:
+  HuggingFaceTB/SmolVLM-500M-Instruct
+
+Engine:
+  Transformers.js v3 (@huggingface/transformers) + WebGPU + ONNX
+
+Base Architecture:
+  SmolVLM — 500 Million Parameters, Instruct Tuned
+  (by HuggingFace SmolLM team, designed specifically for on-device inference)
+
+Quantization:
+  q4 (4-bit ONNX quantised)
+
+Download Size:
+  ~1 GB (cached in browser after first download)
+
+VRAM at Runtime:
+  ~1 – 1.5 GB
+
+Why SmolVLM-500M?
+  • WELL within 2 GB — the smallest capable VLM that runs in the browser
+  • Purpose-built for low-resource environments
+  • Accepts both images + text in a single OpenAI-style content array
+  • No Qwen2-VL / Phi-3.5-vision WebGPU WASM that fits in 2 GB exists in
+    the official WebLLM prebuilt registry; SmolVLM is the correct lightweight
+    alternative available via Transformers.js
+
+═══════════════════════════════════════════
+  BROWSER REQUIREMENTS
+═══════════════════════════════════════════
+
+- WebGPU-enabled browser: Chrome 113+, Edge 113+, or Safari with flags
+- Minimum 4 GB system RAM recommended
+- Both models are cached after first download — no re-download needed
+
+═══════════════════════════════════════════
+  HOW MULTIMODALITY WORKS
+═══════════════════════════════════════════
+
+1. User clicks "Load Vision AI" → SmolVLM-500M is downloaded via
+   Transformers.js and quantised ONNX weights are cached in IndexedDB.
+2. User attaches an image (📎 button) → converted to a base-64 data-URL.
+3. On send, the data-URL + question are passed as a chat-format message:
+     [{ type: "image", image: "data:image/jpeg;base64,..." },
+      { type: "text",  text: "<user question>" }]
+4. SmolVLM returns a text description / answer running entirely in WebGPU.
